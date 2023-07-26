@@ -13,7 +13,7 @@ st.set_page_config(
     page_icon=icon,
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={'About': """# This app is created by *Akash Jha!*"""})
+    menu_items={'About': """# This app is created by Sumit kumar!*"""})
 # CREATING OPTION MENU
 selected = st.sidebar.radio(
     "Select an option:",

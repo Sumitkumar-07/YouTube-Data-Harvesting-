@@ -47,42 +47,53 @@ By following this ETL process, the project can efficiently extract YouTube chann
 By following this EDA process and utilizing the Streamlit framework, users can interactively explore the YouTube data, visualize insights, and gain valuable information from the collected data.
 
 # User Guide
-# Step 1. Data Collection Zone
-  1) Search Channel ID:
-       - Go to the YouTube channel's home page and find the channel ID.
-       - Copy the channel ID and paste it into the input box provided in the "Data Collection Zone."
-  2) Get Data and Store:
-       - Click the "Get Data and Store" button in the "Data Collection Zone" to extract data from the specified YouTube channel using the YouTube API.
-       - The data will be stored in the MongoDB database as part of the data lake.
+# Home Page
+  - The home page provides an overview of the application, its domain, technologies used, and a brief description of its functionality.
+  - The YouTube logo is displayed at the top of the page.
 
-# Step 2. Data Migration Zone
-  1) Select Channel Name:
-       - In the "Data Migration Zone," select the channel name from the available options. These options will be populated based on the channels stored in the 
-         MongoDB database.
-  2) Migrate to MySQL:
-       - Click the "Migrate to MySQL" button to migrate the specific channel's data from the MongoDB database to the MySQL database.
-       - This step provides a structured storage option for further data analysis and querying.
-    
-# Step 3. Channel Data Analysis Zone
-  1) Select a Question:
-      - In the "Channel Data Analysis Zone," you will find a dropdown menu with various predefined questions.
-  2) Get Results:
-      - Choose a question from the dropdown menu to get the analysis results.
-  3) The results can be displayed in two formats:
-      - DataFrame Format: View the results in a tabular format.
-      - Bar Chart Format: Visualize the results using bar charts for better insights.
-  4) Interact with the Dashboard:
-      - The Streamlit app provides a user-friendly dashboard that allows interactive exploration of the YouTube data.
-      - Use the dropdown options and buttons to interact with the app and explore different aspects of the data.
+# Extract and Transform Page
+  - Access the "Extract and Transform" page from the navigation menu on the sidebar.
+  - Extract Tab
+     - Enter YouTube Channel ID:
+         - To start data extraction, enter the channel ID in the input box.
+         - To find the channel ID, go to the YouTube channel's home page, right-click, select "View page source," and find the "channel_id" in the source code. 
+           Copy and paste it into the input box.
+     - Extract Data:
+         - Click the "Extract Data" button to retrieve the details of the specified YouTube channel using the YouTube Data API.
+         - The extracted data will be displayed in a table format, showing information such as the channel name, subscribers, views, total videos, and more.
+     - Upload to MongoDB:
+         - After extracting the data, you can click the "Upload to MongoDB" button to store the extracted data in a MongoDB database as part of the data lake
+  - Transform Tab
+     - Select a Channel to Begin Transformation:
+         - In the "Transform" tab, you can select a YouTube channel from the dropdown menu.
+         - The dropdown menu will be populated with channel names retrieved from the MongoDB database.
+     - Submit: 
+         - After selecting a channel, click the "Submit" button to start the data transformation process.
+
+# View Page
+   - Access the "View" page from the navigation menu on the sidebar.
+     - Select a Question: 
+         - Choose a question from the dropdown menu to get insights and analytics from the transformed data.
+     - Questions and Analytics:
+         - The dropdown menu contains predefined questions with corresponding analytics for YouTube channel data.
+         - The answers to the questions are displayed in table format for easy viewing and understanding.
+   - Visualization:
+         - Some questions have associated visualizations, such as bar charts, to provide graphical representation and better insights into the data.
+         - The visualizations are interactive, allowing you to hover over data points for more details.
+
 
 # How to Run the Application
 1) Install Dependencies:
-      - Ensure you have Python and the required libraries installed as mentioned in the "Setup and Requirements" section of the README file.
-        Start MongoDB:
-      - Ensure that your MongoDB server is running on localhost and port 27017.
-2) Set up MySQL:
+      - Ensure you have Python installed along with the required libraries as mentioned in the "Imports" section of the code.
+2) Set Up MongoDB:
+      - Make sure you have MongoDB installed and running on localhost and port 27017.
+3) Set Up MySQL:
       - Configure your MySQL database with the appropriate credentials (host, user, password, database) for data migration.
-3) Run the Application:
-      - Execute the command streamlit run app.py in your terminal to start the Streamlit app.
-4) Access the Dashboard:
-      - The Streamlit app will open in your default browser. You can now access and interact with the dashboard.
+4) API Key:
+     - Replace the api_key variable with your own YouTube Data API key.
+5) Start the Streamlit App:
+     - Run the application by executing the command streamlit run app.py in your terminal.
+6) Interact with the App:
+     - The application will open in your default web browser.
+     - Use the navigation menu on the sidebar to access different pages: "Home," "Extract and Transform," and "View."
+     - Follow the instructions on each page to extract data, transform and load it into the database, and view analytics.

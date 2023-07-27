@@ -6,6 +6,8 @@ import pymongo
 from googleapiclient.discovery import build
 from PIL import Image
 import pymysql
+from datetime import datetime
+import datetime
 # SETTING PAGE CONFIGURATIONS
 icon = Image.open("youtube_logo.jpg")
 st.set_page_config(
@@ -16,8 +18,8 @@ st.set_page_config(
     menu_items={'About': """# This app is created by Sumit kumar!*"""})
 # CREATING OPTION MENU
 selected = st.sidebar.radio(
-    "Select an option:",
-    options=["Home", "Extract and Transform", "View"],
+    "Select an option:⬇️",
+    options=["🏠Home", "⏳Extract and Transform", "😀View"],
 
 )
 
@@ -57,7 +59,7 @@ def get_channel_details(channel_id):
                     Country=response['items'][i]['snippet'].get('country')
                     )
         ch_data.append(data)
-    return ch_data
+    return pd.DataFrame(ch_data)
 
 
 # FUNCTION TO GET VIDEO IDS
@@ -119,7 +121,7 @@ def get_video_details(v_ids):
                                      'caption']
                                  )
             video_stats.append(video_details)
-    return video_stats
+    return pd.DataFrame(video_stats)
 
 
 # FUNCTION TO GET COMMENT DETAILS
@@ -135,27 +137,30 @@ def get_comments_details(v_id):
             for cmt in response['items']:
                 data = dict(Comment_id=cmt['id'],
                             Video_id=cmt['snippet']['videoId'],
-                            Comment_text=
-                            cmt['snippet']['topLevelComment']['snippet'][
-                                'textDisplay'],
-                            Comment_author=
-                            cmt['snippet']['topLevelComment']['snippet'][
-                                'authorDisplayName'],
-                            Comment_posted_date=
-                            cmt['snippet']['topLevelComment']['snippet'][
-                                'publishedAt'],
-                            Like_count=
-                            cmt['snippet']['topLevelComment']['snippet'][
-                                'likeCount'],
-                            Reply_count=cmt['snippet']['totalReplyCount']
-                            )
+                            Comment_text=cmt['snippet']['topLevelComment']['snippet']['textDisplay'],
+                            Comment_author=cmt['snippet']['topLevelComment']['snippet']['authorDisplayName'],
+                            Comment_posted_date=cmt['snippet']['topLevelComment']['snippet']['publishedAt'],
+                            Like_count=cmt['snippet']['topLevelComment']['snippet']['likeCount'],
+                            Reply_count=cmt['snippet']['totalReplyCount'])
                 comment_data.append(data)
             next_page_token = response.get('nextPageToken')
             if next_page_token is None:
                 break
-    except:
-        pass
-    return comment_data
+    except Exception as e:
+        print(f"Error getting comments for video {v_id}: {e}")
+
+    return pd.DataFrame(comment_data)
+
+# FUNCTION TO GET COMMENTS DETAILS
+def comments():
+    com_d = []  # Initialize com_d as an empty list
+    for i in range(len(v_ids)):
+        comments_df = get_comments_details(v_ids.loc[i, 'Video_id'])
+        if not comments_df.empty:  # Check if the dataframe is not empty
+            com_d.extend(comments_df)
+    if not com_d:
+        raise ValueError("No comments found for any video in the list.")
+    return pd.concat(com_d, ignore_index=True)
 
 
 # FUNCTION TO GET CHANNEL NAMES FROM MONGODB
@@ -165,25 +170,47 @@ def channel_names():
         ch_name.append(i['Channel_name'])
     return ch_name
 
+st.markdown(
+    """
+    <style>
+    .title {
+        color: red;
+        text-decoration: underline;
+        text-align: center;
+        font-size: 66px;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # HOME PAGE
-if selected == "Home":
+if selected == "🏠Home":
     # Title Image
 
     col1, col2 = st.columns(2, gap='medium')
-    col1.markdown("## :blue[Domain] : Social Media")
     col1.markdown(
-        "## :blue[Technologies used] : Python,MongoDB, Youtube Data API, MySql, Streamlit")
+        "<p class='title'>YouTube Data Harvesting and Warehousing</p>",unsafe_allow_html=True)
+    col1.markdown("#   ")
+    col1.markdown("#   ")
+    col1.markdown("- - - - - - - ")
     col1.markdown(
-        "## :blue[Overview] : Retrieving the Youtube channels data from the Google API, storing it in a MongoDB as data lake, migrating and transforming data into a SQL database,then querying the data and displaying it in the Streamlit app.")
+        "## :blue[💻Technologies used] : Python,MongoDB, Youtube Data API, MySql, Streamlit",unsafe_allow_html=True)
+    col1.markdown(
+        "## :blue[📑Overview] : Retrieving the Youtube channels data from the Google API, storing it in a MongoDB as data lake, migrating and transforming data into a SQL database,then querying the data and displaying it in the Streamlit app.",unsafe_allow_html=True)
+    col1.markdown("- - - - - - - ")
+    col2.markdown("#   ")
+    col2.markdown("#   ")
     col2.markdown("#   ")
     col2.markdown("#   ")
     col2.markdown("#   ")
     col2.image("youtube_logo.jpg")
-
+    col2.image("youtube_api.jpg")
 # EXTRACT and TRANSFORM PAGE
-if selected == "Extract and Transform":
-    tab1, tab2 = st.tabs(["$\huge EXTRACT $", "$\huge TRANSFORM $"])
+if selected == "⏳Extract and Transform":
+    tab1, tab2 = st.tabs(["$\huge EXTRACT $ ","$\huge TRANSFORM $"])
 
     # EXTRACT TAB
     with tab1:
@@ -194,9 +221,12 @@ if selected == "Extract and Transform":
             ',')
         if ch_id and st.button("Extract Data"):
             ch_details = get_channel_details(ch_id)
-            st.write(
-                f'#### Extracted data from :green["{ch_details[0]["Channel_name"]}"] channel')
-            st.table(ch_details)
+            if not ch_details.empty:  # Check if DataFrame is not empty
+                st.write(
+                    f'#### Extracted data from :green["{ch_details.iloc[0]["Channel_name"]}"] channel')
+                st.table(ch_details)
+            else:
+                st.warning("No data extracted for the given channel ID.")
         if st.button("Upload to MongoDB"):
             with st.spinner('Please Wait for it...'):
                 ch_details = get_channel_details(ch_id)
@@ -236,8 +266,17 @@ if selected == "Extract and Transform":
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
             for i in collections.find():
                 try:
-                    mycursor.execute(query, tuple(i.values()))
-                    mydb.commit()
+                    # Check if the channel_id already exists in the table
+                    mycursor.execute(
+                        "SELECT 1 FROM channels WHERE Channel_id = %s",
+                        (i['Channel_id'],))
+                    result = mycursor.fetchone()
+                    if result is None:
+                        mycursor.execute(query, (
+                        i['Channel_id'], i['Channel_name'], i['Playlist_id'],
+                        i['Subscribers'], i['Views'], i['Total_videos'],
+                        i['Description'], i['Country']))
+                        mydb.commit()
                 except pymysql.Error as e:
                     st.error(
                         f"Error inserting data into 'channels' table: {e}")
@@ -246,33 +285,56 @@ if selected == "Extract and Transform":
         # FUNCTION TO INSERT DATA INTO MYSQL 'videos' TABLE
         def insert_into_videos():
             collections = db.video_details
-            query = """INSERT INTO videos  (Channel_name,Channel_id,Video_id,Title,Tags,Thumbnail,Description,Published_date,Duration,Views,Likes,Comments,Favorite_count,Definition,Caption_status)
-                        VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+            query = """INSERT INTO videos (Channel_name, Channel_id, Video_id, Title, Tags, Thumbnail, Description, Published_date, Duration, Views, Likes, Comments, Favorite_count, Definition, Caption_status)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             for i in collections.find():
                 try:
-                    t = tuple(i.values())
-                    mycursor.execute(query, t)
-                    mydb.commit()
+                    # Convert Published_date to the correct format
+                    published_date = i['Published_date'][:19].replace('T', ' ')
+
+                    # Convert Tags list to a comma-separated string
+                    tags_str = ','.join(i['Tags']) if i['Tags'] else None
+
+                    t = (i['Channel_name'], i['Channel_id'], i['Video_id'],
+                         i['Title'], tags_str, i['Thumbnail'],
+                         i['Description'], published_date, i['Duration'],
+                         i['Views'], i['Likes'], i['Comments'],
+                         i['Favorite_count'], i['Definition'],
+                         i['Caption_status'])
+
+                    # Check if the Video_id already exists in the table
+                    mycursor.execute(
+                        "SELECT Video_id FROM videos WHERE Video_id = %s",
+                        (i['Video_id'],))
+                    existing_video = mycursor.fetchone()
+
+                    if not existing_video:  # Skip insertion if the Video_id already exists
+                        mycursor.execute(query, t)
+                        mydb.commit()
                 except pymysql.Error as e:
                     st.error(f"Error inserting data into 'videos' table: {e}")
 
 
         # FUNCTION TO INSERT DATA INTO MYSQL 'comments' TABLE
         def insert_into_comments():
-            collections1 = db.video_details
-            collections2 = db.comments_details
-            query = """INSERT INTO comments (Comment_id,Video_id,Comment_text,Comment_author,Comment_posted_date,Like_count,Reply_count)
-                        VALUES(%s,%s,%s,%s,%s,%s,%s)"""
-            for vid in collections1.find():
-                for i in collections2.find({'Video_id': vid['Video_id']}):
-                    try:
-                        t = tuple(i.values())
+            collections = db.video_comments
+            query = """INSERT INTO comments (Comment_id, Video_id, Comment_text, Comment_author, Comment_posted_date , Likes_count, Reply_count)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+            for i in collections.find():
+                try:
+                    # Convert Comment_posted_date to the correct format
+                    posted_date_str = i['Comment_posted_date'][:19].replace('T', ' ')
+                    posted_date = datetime.strptime(posted_date_str,'%Y-%m-%d %H:%M:%S')
+                    t = (i['Comment_id'], i['Video_id'], i['Comment_text'],i['Comment_author'], posted_date, i['Likes_count'], i['Reply_count'])
+                    # Check if the Comment_id already exists in the table
+                    mycursor.execute("SELECT Comment_id FROM comments WHERE Comment_id = %s", (i['Comment_id'],))
+                    existing_comment = mycursor.fetchone()
+                    if not existing_comment:  # Skip insertion if the Comment_id already exists
                         mycursor.execute(query, t)
                         mydb.commit()
-                    except pymysql.Error as e:
-                        st.error(
-                            f"Error inserting data into 'comments' table: {e}")
-
+                except pymysql.Error as e:
+                    st.error(
+                        f"Error inserting data into 'comments' table: {e}")
 
         if st.button("Submit"):
             try:
@@ -283,7 +345,7 @@ if selected == "Extract and Transform":
             except pymysql.Error as e:
                 st.error(f"Error during data transformation: {e}")
 # VIEW PAGE
-if selected == "View":
+if selected == "😀View":
 
     st.write("## :orange[Select any question to get Insights]")
     questions = st.selectbox('Questions',

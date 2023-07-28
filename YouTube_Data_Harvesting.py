@@ -30,15 +30,15 @@ db = client['youtube_data']
 
 |------------------------------------------------------- CONNECTING WITH MYSQL DATABASE-------------------------------------------------------------------|
 mydb = sql.connect(
-    host="localhost",
-    user="root",
-    password="sumit",
-    database="youtube_db"
+    host="localhost", #most of the time it is localhost
+    user="your_username",
+    password="your_password",
+    database="your_database"
 )
 mycursor = mydb.cursor(buffered=True)
 
 |------------------------------------------------------ BUILDING CONNECTION WITH YOUTUBE API--------------------------------------------------------------|
-api_key = "AIzaSyD-dOZ0jiC47X0vSURZkwokJM5gXYY2IVE"
+api_key = "YOUR_API_KEY_HERE"
 youtube = build('youtube', 'v3', developerKey=api_key)
 
 
